@@ -21,15 +21,28 @@ def _oserror(errno):
     return OSError(errno, os.strerror(errno))
 
 
-def _ts2f(ts):
+def _ts_to_f1(ts):
     return ts[0] + ts[1] * 1e-9
 
 
-def _f2ts(f):
+def _f1_2_ts(f1):
     ts = (ctypes.c_long * 2)()
-    ts[0] = int(f)
-    ts[1] = f - ts[0]
+    ts[0] = int(f1)
+    ts[1] = int((f1 - ts[0]) * 1e9)
     return ts
+
+
+def _it_to_f2(it):
+    return it[0] + it[1] * 1e-9, it[2] + it[3] * 1e-9
+
+
+def _f2_to_it(f2):
+    it = (ctypes.c_long * 4)()
+    it[0] = int(f2[0])
+    it[1] = int((f2[0] - it[0]) * 1e9)
+    it[2] = int(f2[1])
+    it[3] = int((f2[1] - it[2]) * 1e9)
+    return it
 
 
 class CLOCK(enum.IntEnum):
@@ -47,6 +60,16 @@ class CLOCK(enum.IntEnum):
 
 class TIMER(enum.IntFlag):
     ABSTIME = 0x01
+
+
+class TFD(enum.IntFlag):
+    NONBLOCK = 0o2000000
+    CLOEXEC = 0o4000
+
+
+class TFD_TIMER(enum.IntFlag):
+    ABSTIME = 1 << 0
+    CANCEL_ON_SET = 1 << 1
 
 
 class SYS(enum.IntEnum):
@@ -465,16 +488,38 @@ def clock_getres(clk_id: CLOCK) -> float:
 
 
 def clock_nanosleep(clk_id: CLOCK, flag: TIMER, request: float) -> float:
-    ts_req = _f2ts(request)
+    ts_req = _f1_2_ts(request)
     ts_rem = (ctypes.c_long * 2)()
     if int(_libc.clock_nanosleep(clk_id, flag, ctypes.byref(ts_req), ctypes.byref(ts_rem))) == -1:
         raise _oserror(ctypes.get_errno())
-    return _ts2f(ts_rem)
+    return _ts_to_f1(ts_rem)
 
 
 def nanosleep(req: float) -> float:
-    ts_req = _f2ts(req)
+    ts_req = _f1_2_ts(req)
     ts_rem = (ctypes.c_long * 2)()
     if int(_libc.nanosleep(ctypes.byref(ts_req), ctypes.byref(ts_rem))) == -1:
         raise _oserror(ctypes.get_errno())
-    return _ts2f(ts_rem)
+    return _ts_to_f1(ts_rem)
+
+
+def timerfd_create(clockid: CLOCK, flags: TFD) -> int:
+    fd = int(_libc.timerfd_create(clockid, flags))
+    if fd == -1:
+        raise _oserror(ctypes.get_errno())
+    return fd
+
+
+def timerfd_settime(fd: int, flags: TFD_TIMER, new_value: (float, float)) -> (float, float):
+    it_new = _f2_to_it(new_value)
+    it_old = (ctypes.c_long * 4)()
+    if int(_libc.timerfd_settime(fd, flags, ctypes.byref(it_new), ctypes.byref(it_old))) == -1:
+        raise _oserror(ctypes.get_errno())
+    return _it_to_f2(it_old)
+
+
+def timerfd_gettime(fd: int) -> (float, float):
+    it_cur = (ctypes.c_long * 4)()
+    if int(_libc.timerfd_gettime(fd, ctypes.byref(it_cur))) == -1:
+        raise _oserror(ctypes.get_errno())
+    return _it_to_f2(it_cur)
