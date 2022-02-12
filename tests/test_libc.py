@@ -1,3 +1,5 @@
+import errno
+import os
 import time
 import pytest
 
@@ -23,5 +25,9 @@ def test_timerfd():
     os.close(tfd)
 
     # try to close the timerfd which was already closed.
-    with pytest.raises(OSError):
+    with pytest.raises(OSError) as exc_info:
         os.close(tfd)
+
+    # check detail of OSError
+    assert exc_info.value.args[0] == errno.EBADF
+    assert exc_info.value.args[1] == os.strerror(errno.EBADF)
