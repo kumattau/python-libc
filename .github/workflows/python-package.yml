@@ -9,9 +9,7 @@ on:
       - master
       - 'feature/**'
   pull_request:
-    branches:
-      - master
-      - 'feature/**'
+    branches: [ master ]
 
 jobs:
   build:
