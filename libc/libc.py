@@ -25,7 +25,7 @@ def _ts_to_f1(ts):
     return ts[0] + ts[1] * 1e-9
 
 
-def _f1_2_ts(f1):
+def _f1_to_ts(f1):
     ts = (ctypes.c_long * 2)()
     ts[0] = int(f1)
     ts[1] = int((f1 - ts[0]) * 1e9)
@@ -488,7 +488,7 @@ def clock_getres(clk_id: CLOCK) -> float:
 
 
 def clock_nanosleep(clk_id: CLOCK, flag: TIMER, request: float) -> float:
-    ts_req = _f1_2_ts(request)
+    ts_req = _f1_to_ts(request)
     ts_rem = (ctypes.c_long * 2)()
     if int(_libc.clock_nanosleep(clk_id, flag, ctypes.byref(ts_req), ctypes.byref(ts_rem))) == -1:
         raise _oserror(ctypes.get_errno())
@@ -496,7 +496,7 @@ def clock_nanosleep(clk_id: CLOCK, flag: TIMER, request: float) -> float:
 
 
 def nanosleep(req: float) -> float:
-    ts_req = _f1_2_ts(req)
+    ts_req = _f1_to_ts(req)
     ts_rem = (ctypes.c_long * 2)()
     if int(_libc.nanosleep(ctypes.byref(ts_req), ctypes.byref(ts_rem))) == -1:
         raise _oserror(ctypes.get_errno())
