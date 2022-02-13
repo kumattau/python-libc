@@ -46,7 +46,7 @@ def test_eventfd():
     c = int.from_bytes(b, byteorder=sys.byteorder)
     assert a == c
 
-    # try to close the timerfd which was already closed.
+    # try to close the fd which was already closed.
     with pytest.raises(OSError) as exc_info:
         os.close(efd)
 
