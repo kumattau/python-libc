@@ -72,6 +72,12 @@ class TFD_TIMER(enum.IntFlag):
     CANCEL_ON_SET = 1 << 1
 
 
+class EFD(enum.IntFlag):
+    NONBLOCK = 0o2000000
+    CLOEXEC = 0o4000
+    SEMAPHORE = 0o1
+
+
 class SYS(enum.IntEnum):
     read = 0
     write = 1
@@ -525,7 +531,7 @@ def timerfd_gettime(fd: int) -> (float, float):
     return _it_to_f2(it_cur)
 
 
-def eventfd(initval: int, flags: TFD) -> int:
+def eventfd(initval: int, flags: EFD) -> int:
     fd = int(_libc.eventfd(initval, flags))
     if fd == -1:
         raise _oserror(ctypes.get_errno())
