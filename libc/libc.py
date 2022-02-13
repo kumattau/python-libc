@@ -523,3 +523,10 @@ def timerfd_gettime(fd: int) -> (float, float):
     if int(_libc.timerfd_gettime(fd, ctypes.byref(it_cur))) == -1:
         raise _oserror(ctypes.get_errno())
     return _it_to_f2(it_cur)
+
+
+def eventfd(initval: int, flags: TFD) -> int:
+    fd = int(_libc.eventfd(initval, flags))
+    if fd == -1:
+        raise _oserror(ctypes.get_errno())
+    return fd
