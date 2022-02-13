@@ -16,4 +16,4 @@ def test_timerfd():
     _ = os.read(tfd, 8)
     _ = os.read(tfd, 8)
     t = time.perf_counter() - t
-    assert 2 - 1e3 < t < 2 + 1e3
+    assert 2 - 1e-3 < t < 2 + 1e-3
