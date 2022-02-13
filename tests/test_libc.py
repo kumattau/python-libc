@@ -39,12 +39,8 @@ def test_eventfd():
 
     a = 10
 
-    t = time.perf_counter()
     _ = os.write(efd, a.to_bytes(8, byteorder=sys.byteorder))
     b = os.read(efd, 8)
-    t = time.perf_counter() - t
-    assert 0 < t < 1e-3
-
     os.close(efd)
 
     c = int.from_bytes(b, byteorder=sys.byteorder)
