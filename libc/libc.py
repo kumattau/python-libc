@@ -78,6 +78,24 @@ class EFD(enum.IntFlag):
     SEMAPHORE = 0o1
 
 
+class MFD(enum.IntFlag):
+    CLOEXEC = 0x1
+    ALLOW_SEALING = 0x2
+    HUGETLB = 0x4
+    HUGE_64KB = 0x40000000
+    HUGE_512KB = 0x4c000000
+    HUGE_1MB = 0x50000000
+    HUGE_2MB = 0x54000000
+    HUGE_8MB = 0x5c000000
+    HUGE_16MB = 0x60000000
+    HUGE_32MB = 0x64000000
+    HUGE_256MB = 0x70000000
+    HUGE_512MB = 0x74000000
+    HUGE_1GB = 0x78000000
+    HUGE_2GB = 0x7c000000
+    HUGE_16GB = 0x88000000
+
+
 class SYS(enum.IntEnum):
     read = 0
     write = 1
@@ -533,6 +551,13 @@ def timerfd_gettime(fd: int) -> (float, float):
 
 def eventfd(initval: int, flags: EFD) -> int:
     fd = int(_libc.eventfd(initval, flags))
+    if fd == -1:
+        raise _oserror(ctypes.get_errno())
+    return fd
+
+
+def memfd_create(name: str, flags: MFD) -> int:
+    fd = int(_libc.memfd_create(name.encode(), flags))
     if fd == -1:
         raise _oserror(ctypes.get_errno())
     return fd
