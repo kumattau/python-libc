@@ -19,7 +19,7 @@ def test_getpid():
 ])
 def test_timerfd(interval: float, value: float, count: int):
     # acceptable error is 1 msec or less.
-    limit_error = 2e-3
+    limit_error = 1e-3
 
     tfd = timerfd_create(CLOCK.REALTIME, 0)
 
