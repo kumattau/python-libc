@@ -24,7 +24,7 @@ def test_timerfd(interval: float, value: float, count: int):
 
     # check by timerfd_gettime
     interval2, value2 = timerfd_gettime(tfd)
-    assert(abs(interval2 - interval) < limit_error)
+    assert(interval2 == interval)
     assert(abs(value2 - value) < limit_error)
 
     t = time.perf_counter()
@@ -68,7 +68,7 @@ def test_timerfd_ns(interval: int, value: int, count: int):
 
     # check by timerfd_gettime_ns
     interval2, value2 = timerfd_gettime_ns(tfd)
-    assert(abs(interval2 - interval) < limit_error)
+    assert(interval2 == interval)
     assert(abs(value2 - value) < limit_error)
 
     t = time.perf_counter_ns()
