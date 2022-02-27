@@ -23,10 +23,12 @@ def test_timerfd(interval: float, value: float, count: int):
 
     tfd = timerfd_create(CLOCK.REALTIME, 0)
 
+    # 1st call of timerfd_settime
     interval2, value2 = timerfd_settime(tfd, 0, (interval, value))
     assert(interval2 == 0)
     assert(value2 == 0)
 
+    # 2nd call of timerfd_settime
     interval2, value2 = timerfd_settime(tfd, 0, (interval, value))
     assert(interval2 == interval)
     assert(abs(value2 - value) < limit_error)
@@ -73,10 +75,12 @@ def test_timerfd_ns(interval: int, value: int, count: int):
 
     tfd = timerfd_create(CLOCK.REALTIME, 0)
 
+    # 1st call of timerfd_settime_ns
     interval2, value2 = timerfd_settime_ns(tfd, 0, (interval, value))
     assert(interval2 == 0)
     assert(value2 == 0)
 
+    # 2nd call of timerfd_settime_ns
     interval2, value2 = timerfd_settime_ns(tfd, 0, (interval, value))
     assert(interval2 == interval)
     assert(abs(value2 - value) < limit_error)
