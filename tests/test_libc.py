@@ -71,8 +71,11 @@ def test_timerfd_ns(interval: int, value: int, count: int):
         t = time.perf_counter_ns()
     except AttributeError:
         t = time.perf_counter()
+
+
     for _ in range(count):
         _ = os.read(tfd, 8)
+
 
     total_time = value +  interval * (count - 1)
     try:
