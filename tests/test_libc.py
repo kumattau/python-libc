@@ -18,7 +18,9 @@ def test_getpid():
     ( 0.125, 0.25, 4 ),
 ])
 def test_timerfd(interval: float, value: float, count: int):
+    # acceptable error is 1 msec or less.
     limit_error = 2e-3
+
     tfd = timerfd_create(CLOCK.REALTIME, 0)
     timerfd_settime(tfd, 0, (interval, value))
 
@@ -32,7 +34,6 @@ def test_timerfd(interval: float, value: float, count: int):
         _ = os.read(tfd, 8)
     t = time.perf_counter() - t
 
-    # acceptable error is 1 msec or less.
     total_time = value +  interval * (count - 1)
     assert(abs(t - total_time) < limit_error)
 
