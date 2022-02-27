@@ -15,7 +15,7 @@ def test_getpid():
 
 @pytest.mark.parametrize("interval, value, count", [
     ( 0.5  , 1, 3 ),
-    ( 0.125, 0.25, 4 ),
+    ( 0.125, 0.25, 2 ),
 ])
 def test_timerfd(interval: float, value: float, count: int):
     # acceptable error is 1 msec or less.
@@ -60,7 +60,7 @@ def test_timerfd(interval: float, value: float, count: int):
 
 @pytest.mark.parametrize("interval, value, count", [
     ( SEC_IN_NS //   2, SEC_IN_NS     , 3 ),
-    ( SEC_IN_NS //  10, SEC_IN_NS //20, 4 ),
+    ( SEC_IN_NS //  10, SEC_IN_NS //20, 2 ),
 ])
 def test_timerfd_ns(interval: int, value: int, count: int):
     # acceptable error is 1 msec or less.
