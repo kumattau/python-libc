@@ -56,6 +56,13 @@ def test_timerfd_ns(interval: int, value: int, count: int):
     # acceptable error is 1 msec or less.
     limit_error = SEC_IN_NS // 1000
 
+    # check availability of `time.perf_counter_ns()`.
+    # If it is not available (expected on python 3.6), define a stub.
+    try:
+        _ = time.perf_counter_ns()
+    except AttributeError:
+        time.perf_counter_ns = lambda: int(time.perf_counter() * SEC_IN_NS)
+
     tfd = timerfd_create(CLOCK.REALTIME, 0)
     timerfd_settime_ns(tfd, 0, (interval, value))
 
@@ -64,13 +71,7 @@ def test_timerfd_ns(interval: int, value: int, count: int):
     assert(abs(interval2 - interval) < limit_error)
     assert(abs(value2 - value) < limit_error)
 
-    # Use `time.perf_counter_ns()` instead of `time.perf_counter()` on python 3.7 or later.
-    # Use `time.perf_counter()` on python 3.6 as fallback.
-    # `time.perf_counter_ns()` is not supported on python 3.6.
-    try:
-        t = time.perf_counter_ns()
-    except AttributeError:
-        t = time.perf_counter()
+    t = time.perf_counter_ns()
 
 
     for _ in range(count):
@@ -78,13 +79,8 @@ def test_timerfd_ns(interval: int, value: int, count: int):
 
 
     total_time = value +  interval * (count - 1)
-    try:
-        t = time.perf_counter_ns() - t
-        diff = abs(t - total_time)
-    except AttributeError:
-        t = time.perf_counter() - t
-        diff = abs(t * 1e9 - total_time)
-    assert(diff < limit_error)
+    t = time.perf_counter_ns() - t
+    assert(abs(t - total_time) < limit_error)
 
     # close timerfd
     os.close(tfd)
