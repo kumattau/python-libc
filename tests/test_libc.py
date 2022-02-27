@@ -64,14 +64,24 @@ def test_timerfd_ns(interval: int, value: int, count: int):
     assert(abs(interval2 - interval) < limit_error)
     assert(abs(value2 - value) < limit_error)
 
-    # Use `time.perf_counter_ns()` instead of `time.perf_counter()`
-    t = time.perf_counter_ns()
+    # Use `time.perf_counter_ns()` instead of `time.perf_counter()` on python 3.7 or later.
+    # Use `time.perf_counter()` on python 3.6 as fallback.
+    # `time.perf_counter_ns()` is not supported on python 3.6.
+    try:
+        t = time.perf_counter_ns()
+    except AttributeError:
+        t = time.perf_counter()
     for _ in range(count):
         _ = os.read(tfd, 8)
-    t = time.perf_counter_ns() - t
 
     total_time = value +  interval * (count - 1)
-    assert(abs(t - total_time) < limit_error)
+    try:
+        t = time.perf_counter_ns() - t
+        diff = abs(t - total_time)
+    except AttributeError:
+        t = time.perf_counter() - t
+        diff = abs(t * 1e9 - total_time)
+    assert(diff < limit_error)
 
     # close timerfd
     os.close(tfd)
