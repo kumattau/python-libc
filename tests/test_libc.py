@@ -48,6 +48,42 @@ def test_timerfd(interval: float, value: float, count: int):
     assert exc_info.value.args[1] == os.strerror(errno.EBADF)
 
 
+@pytest.mark.parametrize("interval, value, count", [
+    ( SEC_IN_NS //   2, SEC_IN_NS     , 3 ),
+    ( SEC_IN_NS //  10, SEC_IN_NS //20, 4 ),
+])
+def test_timerfd_ns(interval: int, value: int, count: int):
+    # acceptable error is 1 msec or less.
+    limit_error = SEC_IN_NS // 1000
+
+    tfd = timerfd_create(CLOCK.REALTIME, 0)
+    timerfd_settime_ns(tfd, 0, (interval, value))
+
+    # check by timerfd_gettime_ns
+    interval2, value2 = timerfd_gettime_ns(tfd)
+    assert(abs(interval2 - interval) < limit_error)
+    assert(abs(value2 - value) < limit_error)
+
+    # Use `time.perf_counter_ns()` instead of `time.perf_counter()`
+    t = time.perf_counter_ns()
+    for _ in range(count):
+        _ = os.read(tfd, 8)
+    t = time.perf_counter_ns() - t
+
+    total_time = value +  interval * (count - 1)
+    assert(abs(t - total_time) < limit_error)
+
+    # close timerfd
+    os.close(tfd)
+
+    # try to close the timerfd which was already closed.
+    with pytest.raises(OSError) as exc_info:
+        os.close(tfd)
+
+    # check detail of OSError
+    assert exc_info.value.args[0] == errno.EBADF
+    assert exc_info.value.args[1] == os.strerror(errno.EBADF)
+
 def test_eventfd():
     efd = eventfd(0, 0)
 

@@ -16,6 +16,7 @@ import os
 
 _libc = ctypes.CDLL(ctypes.util.find_library("c"))
 
+SEC_IN_NS = 10**9
 
 def _oserror(errno):
     return OSError(errno, os.strerror(errno))
@@ -44,6 +45,38 @@ def _f2_to_it(f2):
     it[3] = int((f2[1] - it[2]) * 1e9)
     return it
 
+
+def _int2_to_it(int2):
+    """
+    Args:
+        int2: (it_interval, it_value) in nano-sec.
+
+    Returns:
+        ctypes array
+            The 1st element is tv_sec in it_interval.
+            The 2nd element is tv_nsec in it_interval.
+            The 3rd element is tv_sec in it_value.
+            The 4th element is tv_nsec in it_value.
+    """
+    it = (ctypes.c_long * 4)()
+    it[0] = int(int2[0]) // SEC_IN_NS
+    it[1] = int(int2[0]) %  SEC_IN_NS
+    it[2] = int(int2[1]) // SEC_IN_NS
+    it[3] = int(int2[1]) %  SEC_IN_NS
+    return it
+
+def _it_to_int2(it):
+    """
+    Args:
+        it :  ctypes array corresponding to  `struct itimerspec` data.
+
+    Returns:
+        two element tuple of int in nano-second.
+
+        The 1st element is it_interval (Interval for periodic timer) in nano-second.
+        The 2nd element is it_value (Initial expiration) in nano-second.
+    """
+    return it[0] * SEC_IN_NS + it[1], it[2] * SEC_IN_NS + it[3]
 
 class CLOCK(enum.IntEnum):
     REALTIME = 0
@@ -535,18 +568,52 @@ def timerfd_create(clockid: CLOCK, flags: TFD) -> int:
 
 
 def timerfd_settime(fd: int, flags: TFD_TIMER, new_value: (float, float)) -> (float, float):
+    """
+    Args:
+        fd :  file descriptor of timerfd
+        flags : flag to pass `timerfd_settime`
+        new_value : new_value to pass `timerfd_settime` in second by float.
+            The 1st element is it_interval (Interval for periodic timer) in second by float.
+            The 2nd element is it_value (Initial expiration) in second by float.
+
+    Returns:
+        old_value at timerfd_settime in second by float.
+    """
     it_new = _f2_to_it(new_value)
     it_old = (ctypes.c_long * 4)()
     if int(_libc.timerfd_settime(fd, flags, ctypes.byref(it_new), ctypes.byref(it_old))) == -1:
         raise _oserror(ctypes.get_errno())
     return _it_to_f2(it_old)
 
+def timerfd_settime_ns(fd: int, flags: TFD_TIMER, new_value: (int, int)) -> (int, int):
+    """
+    Args:
+        fd :  file descriptor of timerfd
+        flags : flag to pass `timerfd_settime`
+        new_value : new_value to pass `timerfd_settime` in nano-seconds
+            The 1st element is it_interval (Interval for periodic timer) in nano-second.
+            The 2nd element is it_value (Initial expiration) in nano-second.
+
+    Returns:
+        old_value at timerfd_settime in nano-second.
+    """
+    it_new = _int2_to_it(new_value)
+    it_old = (ctypes.c_long * 4)()
+    if int(_libc.timerfd_settime(fd, flags, ctypes.byref(it_new), ctypes.byref(it_old))) == -1:
+        raise _oserror(ctypes.get_errno())
+    return _it_to_int2(it_old)
 
 def timerfd_gettime(fd: int) -> (float, float):
     it_cur = (ctypes.c_long * 4)()
     if int(_libc.timerfd_gettime(fd, ctypes.byref(it_cur))) == -1:
         raise _oserror(ctypes.get_errno())
     return _it_to_f2(it_cur)
+
+def timerfd_gettime_ns(fd: int) -> (int, int):
+    it_cur = (ctypes.c_long * 4)()
+    if int(_libc.timerfd_gettime(fd, ctypes.byref(it_cur))) == -1:
+        raise _oserror(ctypes.get_errno())
+    return _it_to_int2(it_cur)
 
 
 def eventfd(initval: int, flags: EFD) -> int:
