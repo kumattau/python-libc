@@ -13,15 +13,28 @@ def test_getpid():
     assert pid == os.getpid()
 
 
-def test_timerfd():
+@pytest.mark.parametrize("interval, value, count", [
+    ( 0.5  , 1, 3 ),
+    ( 0.125, 0.25, 4 ),
+])
+def test_timerfd(interval: float, value: float, count: int):
+    limit_error = 2e-3
     tfd = timerfd_create(CLOCK.REALTIME, 0)
-    timerfd_settime(tfd, 0, (0.5, 1))
+    timerfd_settime(tfd, 0, (interval, value))
+
+    # check by timerfd_gettime
+    interval2, value2 = timerfd_gettime(tfd)
+    assert(abs(interval2 - interval) < limit_error)
+    assert(abs(value2 - value) < limit_error)
+
     t = time.perf_counter()
-    _ = os.read(tfd, 8)
-    _ = os.read(tfd, 8)
-    _ = os.read(tfd, 8)
+    for _ in range(count):
+        _ = os.read(tfd, 8)
     t = time.perf_counter() - t
-    assert 2 - 1e-3 < t < 2 + 1e-3
+
+    # acceptable error is 1 msec or less.
+    total_time = value +  interval * (count - 1)
+    assert(abs(t - total_time) < limit_error)
 
     # close timerfd
     os.close(tfd)
