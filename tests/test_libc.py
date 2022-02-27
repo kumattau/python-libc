@@ -22,7 +22,14 @@ def test_timerfd(interval: float, value: float, count: int):
     limit_error = 2e-3
 
     tfd = timerfd_create(CLOCK.REALTIME, 0)
-    timerfd_settime(tfd, 0, (interval, value))
+
+    interval2, value2 = timerfd_settime(tfd, 0, (interval, value))
+    assert(interval2 == 0)
+    assert(value2 == 0)
+
+    interval2, value2 = timerfd_settime(tfd, 0, (interval, value))
+    assert(interval2 == interval)
+    assert(abs(value2 - value) < limit_error)
 
     # check by timerfd_gettime
     interval2, value2 = timerfd_gettime(tfd)
@@ -65,7 +72,14 @@ def test_timerfd_ns(interval: int, value: int, count: int):
         time.perf_counter_ns = lambda: int(time.perf_counter() * SEC_IN_NS)
 
     tfd = timerfd_create(CLOCK.REALTIME, 0)
-    timerfd_settime_ns(tfd, 0, (interval, value))
+
+    interval2, value2 = timerfd_settime_ns(tfd, 0, (interval, value))
+    assert(interval2 == 0)
+    assert(value2 == 0)
+
+    interval2, value2 = timerfd_settime_ns(tfd, 0, (interval, value))
+    assert(interval2 == interval)
+    assert(abs(value2 - value) < limit_error)
 
     # check by timerfd_gettime_ns
     interval2, value2 = timerfd_gettime_ns(tfd)
