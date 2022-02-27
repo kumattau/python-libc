@@ -18,6 +18,7 @@ _libc = ctypes.CDLL(ctypes.util.find_library("c"))
 
 SEC_IN_NS = 10**9
 
+
 def _oserror(errno):
     return OSError(errno, os.strerror(errno))
 
@@ -60,10 +61,11 @@ def _int2_to_it(int2):
     """
     it = (ctypes.c_long * 4)()
     it[0] = int(int2[0]) // SEC_IN_NS
-    it[1] = int(int2[0]) %  SEC_IN_NS
+    it[1] = int(int2[0]) % SEC_IN_NS
     it[2] = int(int2[1]) // SEC_IN_NS
-    it[3] = int(int2[1]) %  SEC_IN_NS
+    it[3] = int(int2[1]) % SEC_IN_NS
     return it
+
 
 def _it_to_int2(it):
     """
@@ -73,10 +75,11 @@ def _it_to_int2(it):
     Returns:
         two element tuple of int in nano-second.
 
-        The 1st element is it_interval (Interval for periodic timer) in nano-second.
-        The 2nd element is it_value (Initial expiration) in nano-second.
+        The 1st element is 'Interval for periodic timer' in nano-second.
+        The 2nd element is 'Initial expiration' in nano-second.
     """
     return it[0] * SEC_IN_NS + it[1], it[2] * SEC_IN_NS + it[3]
+
 
 class CLOCK(enum.IntEnum):
     REALTIME = 0
@@ -573,8 +576,8 @@ def timerfd_settime(fd: int, flags: TFD_TIMER, new_value: (float, float)) -> (fl
         fd :  file descriptor of timerfd
         flags : flag to pass `timerfd_settime`
         new_value : new_value to pass `timerfd_settime` in second by float.
-            The 1st element is it_interval (Interval for periodic timer) in second by float.
-            The 2nd element is it_value (Initial expiration) in second by float.
+            The 1st element is 'Interval for periodic timer' in second (float).
+            The 2nd element is 'Initial expiration' in second (float).
 
     Returns:
         old_value at timerfd_settime in second by float.
@@ -585,14 +588,15 @@ def timerfd_settime(fd: int, flags: TFD_TIMER, new_value: (float, float)) -> (fl
         raise _oserror(ctypes.get_errno())
     return _it_to_f2(it_old)
 
+
 def timerfd_settime_ns(fd: int, flags: TFD_TIMER, new_value: (int, int)) -> (int, int):
     """
     Args:
         fd :  file descriptor of timerfd
         flags : flag to pass `timerfd_settime`
         new_value : new_value to pass `timerfd_settime` in nano-seconds
-            The 1st element is it_interval (Interval for periodic timer) in nano-second.
-            The 2nd element is it_value (Initial expiration) in nano-second.
+            The 1st element is 'Interval for periodic timer' in nano-second.
+            The 2nd element is 'Initial expiration' in nano-second.
 
     Returns:
         old_value at timerfd_settime in nano-second.
@@ -603,11 +607,13 @@ def timerfd_settime_ns(fd: int, flags: TFD_TIMER, new_value: (int, int)) -> (int
         raise _oserror(ctypes.get_errno())
     return _it_to_int2(it_old)
 
+
 def timerfd_gettime(fd: int) -> (float, float):
     it_cur = (ctypes.c_long * 4)()
     if int(_libc.timerfd_gettime(fd, ctypes.byref(it_cur))) == -1:
         raise _oserror(ctypes.get_errno())
     return _it_to_f2(it_cur)
+
 
 def timerfd_gettime_ns(fd: int) -> (int, int):
     it_cur = (ctypes.c_long * 4)()
