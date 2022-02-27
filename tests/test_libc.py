@@ -72,14 +72,11 @@ def test_timerfd_ns(interval: int, value: int, count: int):
     assert(abs(value2 - value) < limit_error)
 
     t = time.perf_counter_ns()
-
-
     for _ in range(count):
         _ = os.read(tfd, 8)
-
+    t = time.perf_counter_ns() - t
 
     total_time = value +  interval * (count - 1)
-    t = time.perf_counter_ns() - t
     assert(abs(t - total_time) < limit_error)
 
     # close timerfd
